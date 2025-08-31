@@ -296,7 +296,7 @@
       });
     }
 
-    // --- CAROUSEL: robust, pixel-based sizing, dots, touch, resize ---
+    // --- carousel stuff ---
     const viewport = document.getElementById('carousel-viewport');
     const track = document.getElementById('carousel-track');
     const dotsWrap = document.getElementById('carousel-dots');
@@ -309,7 +309,7 @@
       let startX = 0;
       let isDragging = false;
 
-      // set each slide width to viewport width (pixel-perfect)
+      // set each slide width to viewport width 
       function setSlideSizes(){
         const w = Math.floor(viewport.clientWidth); // integer pixels to avoid subpixel creep
         slides.forEach(slide => {
