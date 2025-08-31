@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Budget Buddy — Dashboard</title>
+  <meta name="description" content="Budget Buddy — dashboard for adding/spending money and red-zone alerts." />
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bb-bg': '#0f172a',
+            'bb-card': '#1e293b',
+            'bb-emerald': '#10b981',
+            'bb-emerald-dark': '#059669',
+            'bb-emerald-light': '#34d399',
+            'bb-text': '#f1f5f9'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root { font-family: 'Poppins', system-ui, sans-serif; }
+    body { background-color: #0f172a; color: #f1f5f9; }
+    .card-glass { background-color: #1e293b; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 6px 20px rgba(0,0,0,0.45); }
+    #toast { position: fixed; bottom: 1rem; right: 1rem; background: #065f46; border: 1px solid #10b981; color: white; padding: 0.75rem 1rem; border-radius: 0.5rem; box-shadow: 0 6px 20px rgba(0,0,0,0.45); opacity: 0; transform: translateY(10px); transition: opacity 0.28s ease, transform 0.28s ease; z-index: 60; pointer-events: none; }
+    #toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .muted { color: #94a3b8; }
+    .danger { color: #fca5a5; }
+
+    .bb-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: linear-gradient(90deg,#10b981 0%,#059669 100%);
+      color: #ffffff;
+      border: 1px solid rgba(16,185,129,0.18);
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      transition: background 240ms cubic-bezier(.2,.9,.2,1), transform 160ms ease, box-shadow 160ms ease;
+      box-shadow: 0 6px 18px rgba(16,185,129,0.06);
+    }
+    .bb-btn:hover {
+      background: linear-gradient(90deg,#34d399 0%,#16a34a 100%);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 26px rgba(16,185,129,0.16);
+    }
+    .bb-btn:focus { outline: 3px solid rgba(16,185,129,0.12); outline-offset: 3px; }
+    button:focus { outline-offset: 2px; border-radius: 6px; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+  <main class="w-full max-w-3xl">
+    <div class="card-glass p-6 rounded-2xl">
+      <!-- Header -->
+      <header class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-semibold text-bb-text">Budget Buddy</h1>
+          <div class="text-xs muted">Private • Local-first prototype</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="text-right mr-2 text-sm muted">
+            <div id="userName">—</div>
+            <div id="userEmail" class="text-xs muted">—</div>
+          </div>
+          <button id="btnLogout" class="px-3 py-1 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700">Log out</button>
+        </div>
+      </header>
+
+      <!-- Balances -->
+      <section class="mt-6 text-center">
+        <div class="text-xs muted">Starting Balance (fixed)</div>
+        <div id="startingBalance" class="text-xl text-bb-emerald font-semibold mt-1">₱0.00</div>
+
+        <div class="mt-4 text-xs muted">Current Balance</div>
+        <div id="balanceDisplay" class="text-4xl font-bold mt-1">₱0.00</div>
+
+        <div class="mt-2 text-xs muted">Red Zone (minimum safe balance)</div>
+        <div class="mt-1">
+          <span id="redZoneDisplay" class="text-bb-emerald font-semibold">₱0.00</span>
+        </div>
+      </section>
+
+      <!-- Add / Spend Buttons -->
+      <div class="mt-8 grid grid-cols-2 gap-4">
+        <button id="addMoneyBtn" class="bb-btn">Add Money</button>
+        <button id="spendMoneyBtn" class="bb-btn">Spend</button>
+      </div>
+
+      <!-- Transaction History -->
+      <div id="logContainer" class="mt-8 bg-bb-card p-4 rounded-xl border border-bb-emerald/20 max-h-64 overflow-y-auto">
+        <h3 class="text-lg font-semibold text-bb-emerald mb-3">Transaction History</h3>
+        <ul id="transactionLog" class="space-y-2 text-sm text-slate-300">
+          <li class="text-slate-500">No transactions yet.</li>
+        </ul>
+      </div>
+
+    <!-- ✅ Improved Tips Section with Gradient Heading -->
+      <div class="mt-14 bg-bb-card p-6 rounded-2xl border border-bb-emerald/20">
+        <h3 class="text-xl font-bold tips-heading mb-6 text-center">💡 Budget Buddy Tips</h3>
+        <div class="space-y-6">
+          <div class="border-b border-slate-700 pb-4">
+            <h4 class="text-bb-emerald font-semibold text-lg">Build an emergency fund — start small, scale up.</h4>
+            <p class="text-slate-300 text-sm mt-2 leading-relaxed">
+              Even a buffer (₱100,000) is linked to better financial well-being, less worry, and lower stress.
+              Work toward 3–6 months of living expenses over time
+              <span class="muted">(Vanguard, 2025; Investopedia, 2025; AARP, 2024)</span>.
+            </p>
+          </div>
+          <div class="border-b border-slate-700 pb-4">
+            <h4 class="text-bb-emerald font-semibold text-lg">Prioritize high-interest debt strategically.</h4>
+            <p class="text-slate-300 text-sm mt-2 leading-relaxed">
+              Use the “avalanche” method (highest interest first) to save more long-term,
+              or the “snowball” method (smallest balances first) for quick wins and motivation.
+            </p>
+          </div>
+          <div class="border-b border-slate-700 pb-4">
+            <h4 class="text-bb-emerald font-semibold text-lg">Create a simple, sustainable budget.</h4>
+            <p class="text-slate-300 text-sm mt-2 leading-relaxed">
+              Track just one or two months of spending, then plan a straightforward monthly budget —
+              no complex spreadsheets needed.
+            </p>
+          </div>
+          <div class="border-b border-slate-700 pb-4">
+            <h4 class="text-bb-emerald font-semibold text-lg">Treat windfalls (raises, bonuses) as savings opportunities.</h4>
+            <p class="text-slate-300 text-sm mt-2 leading-relaxed">
+              Allocate part of extra income toward savings or debt to avoid lifestyle inflation
+              and reach financial goals faster <span class="muted">(Thaler & Benartzi, 2004)</span>.
+            </p>
+          </div>
+          <div class="border-b border-slate-700 pb-4">
+            <h4 class="text-bb-emerald font-semibold text-lg">Audit recurring expenses and subscriptions.</h4>
+            <p class="text-slate-300 text-sm mt-2 leading-relaxed">
+              Identify and trim low-value monthly charges to free up cash for savings or debt payoff.
+            </p>
+          </div>
+          <div>
+            <h4 class="text-bb-emerald font-semibold text-lg">Set SMART goals (Specific, Measurable, Attainable, Relevant, Time-bound).</h4>
+            <p class="text-slate-300 text-sm mt-2 leading-relaxed">
+              Example: “Save ₱30,000 for emergencies in 12 months.” Review goals quarterly to adjust as life changes.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <footer class="mt-6 text-center text-xs text-slate-500">© 2025 Budget Buddy</footer>
+  </main>
+
+  <!-- Add / Spend Modal -->
+  <div id="txModal" class="fixed inset-0 hidden items-center justify-center z-50">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative w-full max-w-md mx-4">
+      <form id="txForm" class="card-glass p-6 rounded-2xl">
+        <h2 id="txTitle" class="text-lg font-semibold text-bb-text">Add Money</h2>
+        <label class="block mt-4 text-sm">Amount (₱)
+          <input required name="amount" type="number" min="0.01" step="0.01" class="mt-1 w-full px-3 py-2 rounded-md border bg-bb-card text-bb-text" placeholder="1000.00">
+        </label>
+        <label class="block mt-3 text-sm">Description (optional)
+          <input name="desc" type="text" class="mt-1 w-full px-3 py-2 rounded-md border bg-bb-card text-bb-text">
+        </label>
+        <div id="redWarning" class="mt-3 text-sm danger hidden">Warning: You are currently in the red zone.</div>
+        <div class="mt-5 flex items-center justify-between gap-3">
+          <button type="button" id="txCancel" class="px-4 py-2 rounded-md text-slate-300">Cancel</button>
+          <button type="submit" id="txSubmit" class="px-4 py-2 rounded-md bg-gradient-to-r from-bb-emerald-light to-bb-emerald text-white font-medium">Confirm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirm Spend Modal -->
+  <div id="confirmRedModal" class="fixed inset-0 hidden items-center justify-center z-60">
+    <div class="absolute inset-0 bg-black/50"></div>
+    <div class="relative w-full max-w-md mx-4">
+      <div class="card-glass p-6 rounded-2xl">
+        <h2 class="text-lg font-semibold text-bb-text">You're in the red zone</h2>
+        <p class="mt-3 text-sm text-slate-300">Your balance is at or below your minimum safe balance. Budget Buddy will show a reminder if you proceed. Are you sure you want to continue?</p>
+        <div class="mt-5 flex justify-between">
+          <button id="confirmRedCancel" class="px-4 py-2 rounded-md text-slate-300">Cancel</button>
+          <button id="confirmRedProceed" class="px-4 py-2 rounded-md bg-bb-emerald text-white">Proceed</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  (function(){
+    const USER_KEY = 'budgetBuddy.user';
+    const TX_KEY = 'budgetBuddy.tx';
+    const userNameEl = document.getElementById('userName');
+    const userEmailEl = document.getElementById('userEmail');
+    const startingBalanceEl = document.getElementById('startingBalance');
+    const balanceDisplay = document.getElementById('balanceDisplay');
+    const redZoneDisplay = document.getElementById('redZoneDisplay');
+    const txModal = document.getElementById('txModal');
+    const txForm = document.getElementById('txForm');
+    const txTitle = document.getElementById('txTitle');
+    const txCancel = document.getElementById('txCancel');
+    const redWarning = document.getElementById('redWarning');
+    const confirmRedModal = document.getElementById('confirmRedModal');
+    const confirmRedCancel = document.getElementById('confirmRedCancel');
+    const confirmRedProceed = document.getElementById('confirmRedProceed');
+    const transactionLog = document.getElementById('transactionLog');
+    const toast = document.getElementById('toast');
+    const addBtn = document.getElementById('addMoneyBtn');
+    const spendBtn = document.getElementById('spendMoneyBtn');
+    const logoutBtn = document.getElementById('btnLogout');
+    let currentUser = null;
+    let transactions = [];
+    let pendingSpendData = null;
+
+    function loadUser(){ try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch(e){ return null; } }
+    function saveUser(u){ localStorage.setItem(USER_KEY, JSON.stringify(u)); }
+    function loadTxs(){ try { const t = JSON.parse(localStorage.getItem(TX_KEY)); return Array.isArray(t) ? t : []; } catch(e){ return []; } }
+    function saveTxs(){ localStorage.setItem(TX_KEY, JSON.stringify(transactions)); }
+    function fmt(v){ return '₱' + Number(v).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
+    function showToast(msg, success=true){
+      toast.textContent = msg;
+      toast.style.background = success ? '#065f46' : '#7f1d1d';
+      toast.style.border = success ? '1px solid #10b981' : '1px solid #f87171';
+      toast.classList.add('show');
+      setTimeout(()=> toast.classList.remove('show'), 3200);
+    }
+    function redirectToLanding(){ window.location.href = 'index.html'; }
+    currentUser = loadUser();
+    if(!currentUser){ redirectToLanding(); }
+    else {
+      userNameEl.textContent = currentUser.name || 'You';
+      userEmailEl.textContent = currentUser.email || '';
+      startingBalanceEl.textContent = fmt(currentUser.startingBalance || 0);
+      updateBalanceUI(currentUser.balance || 0, currentUser.redZone || 0);
+      transactions = loadTxs();
+      renderTransactions();
+    }
+    logoutBtn.addEventListener('click', () => redirectToLanding() );
+    function updateBalanceUI(balance, redZone){
+      balanceDisplay.textContent = fmt(balance);
+      redZoneDisplay.textContent = fmt(redZone);
+      if(balance <= redZone){ balanceDisplay.classList.add('danger'); } else { balanceDisplay.classList.remove('danger'); }
+    }
+    addBtn.addEventListener('click', () => {
+      txTitle.textContent = 'Add Money';
+      redWarning.classList.add('hidden');
+      txForm.dataset.type = 'add';
+      txForm.amount.value = '';
+      txForm.desc.value = '';
+      txModal.classList.remove('hidden'); txModal.classList.add('flex');
+    });
+    spendBtn.addEventListener('click', () => {
+      txTitle.textContent = 'Spend Money';
+      txForm.dataset.type = 'spend';
+      txForm.amount.value = '';
+      txForm.desc.value = '';
+      if(currentUser.balance <= currentUser.redZone){ redWarning.classList.remove('hidden'); } else { redWarning.classList.add('hidden'); }
+      txModal.classList.remove('hidden'); txModal.classList.add('flex');
+    });
+    txCancel.addEventListener('click', () => { txModal.classList.add('hidden'); txModal.classList.remove('flex'); pendingSpendData = null; });
+    txForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fd = new FormData(txForm);
+      const amount = parseFloat(fd.get('amount')) || 0;
+      const desc = fd.get('desc') || '';
+      const type = txForm.dataset.type;
+      if(amount <= 0){ showToast('Enter an amount greater than 0', false); return; }
+      if(type === 'add'){
+        currentUser.balance = Number((currentUser.balance + amount).toFixed(2));
+        saveUser(currentUser);
+        recordTransaction('income', amount, desc);
+        showToast(`Added ${fmt(amount)}`);
+        txModal.classList.add('hidden'); txModal.classList.remove('flex');
+        if(currentUser.balance > currentUser.redZone){ showToast('You are above your red zone now.'); }
+        return;
+      }
+      if(currentUser.balance <= currentUser.redZone){
+        pendingSpendData = { amount, desc };
+        txModal.classList.add('hidden'); txModal.classList.remove('flex');
+        confirmRedModal.classList.remove('hidden'); confirmRedModal.classList.add('flex');
+        return;
+      }
+      const newBalance = Number((currentUser.balance - amount).toFixed(2));
+      if(newBalance <= currentUser.redZone){
+        currentUser.balance = newBalance;
+        saveUser(currentUser);
+        recordTransaction('expense', amount, desc);
+        showToast(`Spent ${fmt(amount)} — you've hit the red zone!`, false);
+        txModal.classList.add('hidden'); txModal.classList.remove('flex');
+        return;
+      }
+      currentUser.balance = newBalance;
+      saveUser(currentUser);
+      recordTransaction('expense', amount, desc);
+      showToast(`Spent ${fmt(amount)}`);
+      txModal.classList.add('hidden'); txModal.classList.remove('flex');
+    });
+    confirmRedCancel.addEventListener('click', () => {
+      pendingSpendData = null;
+      confirmRedModal.classList.add('hidden'); confirmRedModal.classList.remove('flex');
+    });
+    confirmRedProceed.addEventListener('click', () => {
+      if(!pendingSpendData){ confirmRedModal.classList.add('hidden'); confirmRedModal.classList.remove('flex'); return; }
+      const { amount, desc } = pendingSpendData;
+      showToast('Reminder: you proceeded while in the red zone.', false);
+      currentUser.balance = Number((currentUser.balance - amount).toFixed(2));
+      saveUser(currentUser);
+      recordTransaction('expense', amount, desc);
+      showToast(`Spent ${fmt(amount)} (you were in the red zone)`, false);
+      pendingSpendData = null;
+      confirmRedModal.classList.add('hidden'); confirmRedModal.classList.remove('flex');
+    });
+    function recordTransaction(kind, amount, desc){
+      const tx = {
+        id: Date.now(),
+        kind,
+        amount: Number(amount.toFixed(2)),
+        desc: desc || (kind === 'income' ? 'Income' : 'Expense'),
+        balanceAfter: currentUser.balance,
+        date: new Date().toISOString()
+      };
+      transactions.unshift(tx);
+      saveTxs();
+      renderTransactions();
+      updateBalanceUI(currentUser.balance, currentUser.redZone);
+    }
+    function renderTransactions(){
+      if(!transactionLog) return;
+      transactionLog.innerHTML = '';
+      if(!transactions.length){ transactionLog.innerHTML = '<li class="text-slate-500">No transactions yet.</li>'; return; }
+      transactions.forEach(tx => {
+        const li = document.createElement('li');
+        li.className = 'flex items-start justify-between gap-3 p-2 bg-transparent rounded-md';
+        const left = document.createElement('div');
+        left.innerHTML = `<div class="text-sm">${escapeHtml(tx.desc)}</div><div class="text-xs muted">${new Date(tx.date).toLocaleString()}</div>`;
+        const right = document.createElement('div');
+        right.innerHTML = `<div class="${tx.kind==='expense'?'text-red-300 text-sm':'text-bb-emerald text-sm'}">${tx.kind==='expense' ? '-' : '+'}${fmt(tx.amount).replace('₱','')}</div><div class="text-xs muted">After: ${fmt(tx.balanceAfter)}</div>`;
+        li.appendChild(left); li.appendChild(right); transactionLog.appendChild(li);
+      });
+    }
+    function escapeHtml(str){
+      return str.replace(/[&<>"']/g, function (m) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

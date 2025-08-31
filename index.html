@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Budget Buddy — Modern Budgeting</title>
+  <meta name="description" content="Budget Buddy — sleek, minimal budgeting that helps you avoid the red zone." />
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bb-bg': '#0f172a',
+            'bb-card': '#1e293b',
+            'bb-emerald': '#10b981',
+            'bb-emerald-dark': '#059669',
+            'bb-emerald-light': '#34d399',
+            'bb-text': '#f1f5f9'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root { font-family: 'Poppins', system-ui, sans-serif; }
+    body { background-color: #0f172a; color: #f1f5f9; }
+    .card-glass {
+      background-color: #1e293b;
+      border: 1px solid rgba(255,255,255,0.05);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    }
+    .cta-emerald {
+      background: linear-gradient(to right, #22c55e, #2dd4bf);
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+    .cta-emerald:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 6px 20px rgba(45,212,191,0.3); }
+
+    .carousel { width: 100%; }
+    .carousel-viewport { overflow: hidden; position: relative; width: 100%; }
+    .carousel-track { display: flex; will-change: transform; transition: transform 420ms cubic-bezier(.2,.9,.2,1); }
+    .carousel-slide { min-width: 100%; box-sizing: border-box; padding: 1rem; text-align: center; }
+
+    #toast {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: #065f46;
+      border: 1px solid #10b981;
+      color: white;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.28s ease, transform 0.28s ease;
+      z-index: 60;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+    /* dots */
+    .carousel-dot { height: 6px; width: 28px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.03); cursor: pointer; }
+    .carousel-dot.active { background: rgba(16,185,129,0.85); border-color: rgba(16,185,129,0.45); }
+
+    /* small accessibility focus */
+    button:focus { outline: 3px solid rgba(16,185,129,0.12); outline-offset: 2px; border-radius: 6px; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+  <main class="max-w-4xl w-full">
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+      <div class="px-6 py-8 rounded-2xl card-glass">
+        <header class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-bb-emerald/20">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="11" rx="2" stroke="#34d399" stroke-width="1.2" fill="#065f46"/><path d="M7 11h3M14 11h3" stroke="#34d399" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <h1 class="text-3xl font-semibold text-bb-text">Budget Buddy</h1>
+            <p class="text-sm text-slate-300">A sleek, modern way to <span class="text-bb-emerald font-semibold">track money</span>, <span class="text-bb-emerald font-semibold">avoid the red zone</span>, and <span class="text-bb-emerald font-semibold">build better habits</span>.</p>
+          </div>
+        </header>
+
+        <div class="mt-8">
+          <p class="text-slate-200 leading-relaxed text-center">Budget Buddy helps you start from a <span class="text-bb-emerald font-semibold">fixed starting balance</span>, log income and spending, and warns you when you're close to your <span class="text-bb-emerald font-semibold">minimum safe balance</span>. It's simple, private, and designed to feel modern and empowering.</p>
+
+          <div class="mt-6 flex justify-center gap-4">
+            <button id="ctaTry" class="cta-emerald px-6 py-3 rounded-lg font-medium shadow-md text-white">Sign Up</button>
+            <button id="ctaLogin" class="px-6 py-3 rounded-lg border border-bb-emerald text-bb-emerald">Login</button>
+          </div>
+
+          <div class="mt-6 bg-bb-card px-4 py-4 rounded-lg border border-bb-emerald/30">
+            <h3 class="text-lg font-semibold text-bb-emerald mb-3">Did You Know?</h3>
+            <ul class="list-disc pl-5 space-y-2 text-sm text-slate-200">
+              <li>The <span class="text-bb-emerald font-semibold">financial literacy rate</span> in the Philippines remains a major concern.</li>
+              <li>Recent reports show that only about <span class="text-bb-emerald font-semibold">25% of Filipino adults</span> are financially literate <span class="text-slate-400 text-xs">(Inquiro, 2025)</span>.</li>
+            </ul>
+            <p class="mt-3 text-sm text-slate-200">Budget Buddy was built to make money management <span class="text-bb-emerald font-semibold">simple</span> and <span class="text-bb-emerald font-semibold">approachable</span> for everyone.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-8 rounded-2xl card-glass">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs text-slate-400">Current balance</div>
+            <div id="balancePreview" class="text-3xl font-semibold text-bb-text mt-1">₱12,345.00</div>
+          </div>
+          <div class="text-right text-xs text-slate-400">
+            <div>Red zone</div>
+            <div id="redZonePreview" class="mt-1 font-medium text-slate-200">₱2,000.00</div>
+          </div>
+        </div>
+
+        <div class="mt-6 grid grid-cols-2 gap-3">
+          <button id="btnAdd" class="px-3 py-2 rounded-lg bg-bb-emerald/20 border border-bb-emerald/30 text-sm font-medium text-bb-emerald">Add money</button>
+          <button id="btnSpend" class="px-3 py-2 rounded-lg bg-bb-card border border-slate-600 text-sm font-medium text-slate-200">Spend</button>
+        </div>
+
+        <div class="mt-6 text-xs text-slate-400">Preview of the dashboard — clean, minimal, and focused on your balance and red zone.</div>
+
+        <div class="mt-6 bg-bb-card px-4 py-5 rounded-2xl border border-bb-emerald/20">
+          <h3 class="text-lg font-semibold text-bb-emerald mb-3">How Budget Buddy Works</h3>
+          <div class="carousel" id="how-carousel" aria-roledescription="carousel">
+            <div class="carousel-viewport" id="carousel-viewport" aria-live="polite">
+              <div class="carousel-track" id="carousel-track">
+                <div class="carousel-slide"><span class="text-bb-emerald font-semibold">Starts</span> by recording your initial balance so you always know where you began.</div>
+                <div class="carousel-slide">Lets you <span class="text-bb-emerald font-semibold">add income</span> and subtract expenses anytime to keep your balance updated.</div>
+                <div class="carousel-slide">Alerts you when your balance reaches the <span class="text-bb-emerald font-semibold">red zone</span> — the minimum safe balance you set.</div>
+                <div class="carousel-slide">Encourages <span class="text-bb-emerald font-semibold">smarter spending</span> by reminding you when you're in the red zone before subtracting money.</div>
+                <div class="carousel-slide">Gives simple <span class="text-bb-emerald font-semibold">tips and insights</span> to help you manage your money and improve financial habits.</div>
+              </div>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-3">
+              <button id="carousel-prev" class="text-xs px-3 py-1 rounded-md border border-bb-emerald/30 bg-bb-emerald/10 text-slate-200">Prev</button>
+              <div id="carousel-dots" class="flex items-center gap-2" role="tablist" aria-label="How it works slides"></div>
+              <button id="carousel-next" class="text-xs px-3 py-1 rounded-md border border-bb-emerald/30 bg-bb-emerald/10 text-slate-200">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="mt-10 text-center text-sm text-slate-500">© 2025 Budget Buddy</footer>
+  </main>
+
+  <!-- Signup Modal -->
+  <div id="modal" class="fixed inset-0 hidden items-center justify-center z-50">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-md mx-4">
+      <form id="signupForm" class="card-glass p-6 rounded-2xl">
+        <h2 class="text-lg font-semibold text-bb-text">Create your Budget Buddy account</h2>
+        <label class="block mt-4 text-sm">Name
+          <input required name="name" class="mt-1 w-full px-3 py-2 rounded-md border bg-bb-card text-bb-text" placeholder="Your name">
+        </label>
+        <label class="block mt-3 text-sm">Email
+          <input required name="email" type="email" class="mt-1 w-full px-3 py-2 rounded-md border bg-bb-card text-bb-text" placeholder="you@example.com">
+        </label>
+        <label class="block mt-3 text-sm">Password
+          <input required name="password" type="password" class="mt-1 w-full px-3 py-2 rounded-md border bg-bb-card text-bb-text" placeholder="Choose a password">
+        </label>
+        <label class="block mt-3 text-sm">Starting balance (₱)
+          <input required name="start" type="number" step="0.01" min="0" class="mt-1 w-full px-3 py-2 rounded-md border bg-bb-card text-bb-text" placeholder="10000">
+        </label>
+        <label class="block mt-3 text-sm">Red zone threshold (₱)
+          <input required name="red" type="number" step="0.01" min="0" class="mt-1 w-full px-3 py-2 rounded-md border bg-bb-card text-bb-text" placeholder="2000">
+        </label>
+        <div class="mt-5 flex justify-between gap-3">
+          <button type="button" id="cancelBtn" class="px-4 py-2 text-slate-300">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-md bg-gradient-to-r from-bb-emerald-light to-bb-emerald text-white font-medium">Create account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="fixed inset-0 hidden items-center justify-center z-50">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-md mx-4">
+      <form id="loginForm" class="card-glass p-6 rounded-2xl">
+        <h2 class="text-lg font-semibold text-bb-text">Login</h2>
+        <label class="block mt-4 text-sm">Email
+          <input required name="email" type="email" class="mt-1 w-full px-3 py-2 rounded-md border bg-bb-card text-bb-text" placeholder="you@example.com">
+        </label>
+        <label class="block mt-3 text-sm">Password
+          <input required name="password" type="password" class="mt-1 w-full px-3 py-2 rounded-md border bg-bb-card text-bb-text" placeholder="Your password">
+        </label>
+        <div class="mt-5 flex justify-between gap-3">
+          <button type="button" id="cancelLoginBtn" class="px-4 py-2 text-slate-300">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-md bg-bb-emerald text-white">Login</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  (function(){
+    // --- EmailJS init (public key only) ---
+    try { emailjs.init('cQVOxcAL2fudFs-a7'); }
+    catch (e) { console.warn('EmailJS init issue', e); }
+
+    // --- modal & auth logic (preserve existing functions) ---
+    const modal = document.getElementById('modal');
+    const loginModal = document.getElementById('loginModal');
+    const toast = document.getElementById('toast');
+
+    const ctaTry = document.getElementById('ctaTry');
+    const ctaLogin = document.getElementById('ctaLogin');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const cancelLoginBtn = document.getElementById('cancelLoginBtn');
+
+    if (ctaTry) ctaTry.addEventListener('click', () => { modal.classList.replace('hidden','flex'); setTimeout(()=> modal.querySelector('input[name=name]').focus(),50); });
+    if (cancelBtn) cancelBtn.addEventListener('click', () => { modal.classList.replace('flex','hidden'); });
+
+    if (ctaLogin) ctaLogin.addEventListener('click', () => { loginModal.classList.replace('hidden','flex'); setTimeout(()=> loginModal.querySelector('input[name=email]').focus(),50); });
+    if (cancelLoginBtn) cancelLoginBtn.addEventListener('click', () => { loginModal.classList.replace('flex','hidden'); });
+
+    const USER_KEY = 'budgetBuddy.user';
+    function saveUser(u){ localStorage.setItem(USER_KEY, JSON.stringify(u)); }
+    function loadUser(){ try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch(e){ return null; } }
+
+    // show toast helper
+    function showToast(message, success = true){
+      toast.textContent = message;
+      toast.style.background = success ? '#065f46' : '#7f1d1d';
+      toast.style.border = success ? '1px solid #10b981' : '1px solid #f87171';
+      toast.classList.add('show');
+      setTimeout(()=> toast.classList.remove('show'), 3500);
+    }
+
+    // Signup handler
+    const signupForm = document.getElementById('signupForm');
+    if (signupForm){
+      signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(signupForm);
+        const user = {
+          name: fd.get('name'),
+          email: fd.get('email'),
+          password: btoa(fd.get('password')), // demo encoding
+          startingBalance: parseFloat(fd.get('start')) || 0,
+          balance: parseFloat(fd.get('start')) || 0,
+          redZone: parseFloat(fd.get('red')) || 0,
+          createdAt: new Date().toISOString()
+        };
+        saveUser(user);
+
+        // attempt to send email, but don't block UX
+        try {
+          const res = await emailjs.send('service_lorgona', 'template_desncq4', {
+            user_name: user.name,
+            user_email: user.email,
+            starting_balance: user.startingBalance,
+            red_zone: user.redZone
+          });
+          console.log('EmailJS success', res);
+          showToast('✅ Account created! Confirmation email sent.');
+        } catch (err) {
+          console.error('EmailJS failed:', err);
+          showToast('⚠️ Account created, but email failed to send.', false);
+        }
+
+        modal.classList.replace('flex','hidden');
+        // update preview balances
+        const bp = document.getElementById('balancePreview');
+        const rz = document.getElementById('redZonePreview');
+        if (bp) bp.textContent = '₱' + user.balance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+        if (rz) rz.textContent = '₱' + user.redZone.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+      });
+    }
+
+    // Login handler
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm){
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const fd = new FormData(loginForm);
+        const saved = loadUser();
+        const email = fd.get('email');
+        const pass = btoa(fd.get('password'));
+        if (saved && saved.email === email && saved.password === pass){
+          showToast('Login successful! Redirecting...');
+          // delay then redirect to main.html (create this file)
+          setTimeout(()=> window.location.href = 'main.html', 1250);
+        } else {
+          showToast('Invalid email or password.', false);
+        }
+      });
+    }
+
+    // --- CAROUSEL: robust, pixel-based sizing, dots, touch, resize ---
+    const viewport = document.getElementById('carousel-viewport');
+    const track = document.getElementById('carousel-track');
+    const dotsWrap = document.getElementById('carousel-dots');
+    const prevBtn = document.getElementById('carousel-prev');
+    const nextBtn = document.getElementById('carousel-next');
+
+    if (viewport && track){
+      let slides = Array.from(track.children);
+      let index = 0;
+      let startX = 0;
+      let isDragging = false;
+
+      // set each slide width to viewport width (pixel-perfect)
+      function setSlideSizes(){
+        const w = Math.floor(viewport.clientWidth); // integer pixels to avoid subpixel creep
+        slides.forEach(slide => {
+          slide.style.minWidth = w + 'px';
+        });
+        // set explicit track width
+        track.style.width = (w * slides.length) + 'px';
+        // correct transform after resize
+        updateCarousel();
+      }
+
+      // build dots (clear existing)
+      function buildDots(){
+        if (!dotsWrap) return;
+        dotsWrap.innerHTML = '';
+        slides.forEach((_, i) => {
+          const btn = document.createElement('button');
+          btn.className = 'carousel-dot';
+          btn.setAttribute('aria-label', `Go to slide ${i+1}`);
+          btn.addEventListener('click', () => { index = i; updateCarousel(); });
+          dotsWrap.appendChild(btn);
+        });
+      }
+
+      function updateDots(){
+        if (!dotsWrap) return;
+        Array.from(dotsWrap.children).forEach((d, i) => {
+          d.classList.toggle('active', i === index);
+        });
+      }
+
+      function updateCarousel() {
+        const w = Math.floor(viewport.clientWidth);
+        // ensure index in bounds
+        if (index < 0) index = 0;
+        if (index >= slides.length) index = slides.length - 1;
+        track.style.transform = `translateX(-${index * w}px)`;
+        updateDots();
+      }
+
+      // prev/next
+      if (nextBtn) nextBtn.addEventListener('click', () => { index = (index + 1) % slides.length; updateCarousel(); });
+      if (prevBtn) prevBtn.addEventListener('click', () => { index = (index - 1 + slides.length) % slides.length; updateCarousel(); });
+
+      // touch support
+      viewport.addEventListener('touchstart', (ev) => {
+        if (ev.touches.length !== 1) return;
+        startX = ev.touches[0].clientX;
+        isDragging = true;
+      }, {passive: true});
+      viewport.addEventListener('touchmove', (ev) => {
+        // we don't need to implement dragging animation — keep simple
+      }, {passive: true});
+      viewport.addEventListener('touchend', (ev) => {
+        if (!isDragging) return;
+        const endX = ev.changedTouches[0].clientX;
+        const delta = endX - startX;
+        isDragging = false;
+        if (Math.abs(delta) > 40){
+          if (delta < 0) index = (index + 1) % slides.length;
+          else index = (index - 1 + slides.length) % slides.length;
+          updateCarousel();
+        }
+      });
+
+      // keyboard left/right for accessibility
+      viewport.tabIndex = 0;
+      viewport.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') { index = (index + 1) % slides.length; updateCarousel(); }
+        if (e.key === 'ArrowLeft') { index = (index - 1 + slides.length) % slides.length; updateCarousel(); }
+      });
+
+      // responsive: recalc sizes on resize
+      window.addEventListener('resize', () => {
+        // Recompute after resize ends (debounce)
+        clearTimeout(window._bbResizeTimer);
+        window._bbResizeTimer = setTimeout(() => {
+          setSlideSizes();
+        }, 120);
+      });
+
+      // initialize
+      slides = Array.from(track.children); // refresh in case
+      buildDots();
+      setSlideSizes();
+      updateCarousel();
+    } // end carousel guard
+
+  })();
+  </script>
+</body>
+</html>
